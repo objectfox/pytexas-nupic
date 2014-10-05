@@ -24,17 +24,18 @@
 import pyaudio
 import audioop
 import math
-import time
 from nupic.encoders import ScalarEncoder
 from nupic.research.TP import TP
 from termcolor import colored
 
 # Create our NuPIC entities
 
-enc = ScalarEncoder(n=50, w=3, minval=0, maxval=100, clipInput=True, forced=True)
+enc = ScalarEncoder(n=50, w=3, minval=0, maxval=100,
+						clipInput=True, forced=True)
 
-tp = TP(numberOfCols=50, cellsPerColumn=4, initialPerm=0.5, connectedPerm=0.5,
-        minThreshold=5, newSynapseCount=5, permanenceInc=0.1, permanenceDec=0.1,
+tp = TP(numberOfCols=50, cellsPerColumn=4, initialPerm=0.5,
+		connectedPerm=0.5, minThreshold=5, newSynapseCount=5,
+		permanenceInc=0.1, permanenceDec=0.1,
         activationThreshold=3, globalDecay=0.1, burnIn=1,
         checkSynapseConsistency=False, pamLength=3)
 
@@ -45,7 +46,8 @@ stream = p.open(format = pyaudio.paInt16, channels = 1,
 	rate = int(p.get_device_info_by_index(0)['defaultSampleRate']),
 	input = True, frames_per_buffer = 1024*5)
 
-print "%-48s %48s" % (colored("DECIBELS","green"), (colored("PREDICTION","red")))
+print "%-48s %48s" % (colored("DECIBELS","green"),
+						colored("PREDICTION","red"))
 
 b = 0
 while 1:
@@ -66,6 +68,8 @@ while 1:
 
 	encoded = enc.encode(decibel)
 
+	# Add our encoded representation to the temporal pooler.
+
 	tp.compute(encoded, enableLearn = True, computeInfOutput = True)
 
 	# For the curious:
@@ -79,11 +83,11 @@ while 1:
 		decval = predictedCells.max(axis=1).nonzero()[0][-1]
 
 		# This is more correct, but seems wonky...
-		#decval =  int(enc.decode(predictedCells.max(axis=1).nonzero()[0])[0]["[0:100]"][0][0][1])
+		#decval =  int(enc.decode(predictedCells.max(axis=1).
+		#nonzero()[0])[0]["[0:100]"][0][0][1])
 
 	print "%-48s %48s" % (colored(("*"*(decibel/2))[:38],"green"),
-							(colored(("#"*(decval))[:38],"red")))
-
+							colored(("#"*(decval))[:38],"red"))
 
 	if b >= 20:
 		b = 0
@@ -92,4 +96,3 @@ while 1:
 		tp.reset()
 
 		print " "*35, "RESET!"
-		print "%-48s %48s" % (colored("DECIBELS","green"), (colored("PREDICTION","red")))
